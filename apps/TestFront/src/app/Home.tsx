@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import React, { useEffect, useMemo, useState } from 'react';
 
 import { addSingleUserToOrganizationFromKindeManagementAPI } from './actions';
+import { Team } from '../../types/Team';
 
 interface HomeProps {
   getOrganizations: () => Promise<GetOrganizationsResponse>;
@@ -18,6 +19,7 @@ interface HomeProps {
 
 const Home = ({ getOrganizations, joinTeam, ...props }: HomeProps) => {
   const [orgs, setOrgs] = useState<Array<organization>>([]);
+  const [teams, setTeams] = useState<Array<Team>>([]);
 
   const { user } = useKindeBrowserClient();
   const router = useRouter();
@@ -35,6 +37,15 @@ const Home = ({ getOrganizations, joinTeam, ...props }: HomeProps) => {
       orgsResponse.organizations.length > 0
     ) {
       setOrgs(orgsResponse.organizations);
+    }
+  };
+
+  const fetchTeams = async () => {
+    const response = await fetch('/management/teams');
+    const teamsResponse = await response.json();
+
+    if (teamsResponse) {
+      setTeams(teamsResponse);
     }
   };
 
@@ -65,30 +76,31 @@ const Home = ({ getOrganizations, joinTeam, ...props }: HomeProps) => {
     await joinTeam(orgcode, user);
   };
   useEffect(() => {
-    fetchOrgs();
+    // fetchOrgs();
+    fetchTeams();
   }, []);
   return (
     <>
       <div className="flex flex-col">
         <h2>Join a team:</h2>
         <div className="gap-2 grid grid-cols-1 sm:grid-cols-4">
-          {orgs && Array.isArray(orgs) && orgs.length > 0
-            ? orgs.map((org) => {
+          {teams && Array.isArray(teams) && teams.length > 0
+            ? teams.map((team) => {
                 return (
-                  <Card className="p-4" shadow="sm" key={org.code}>
+                  <Card className="p-4" shadow="sm" key={team.id}>
                     <CardBody className="overflow-visible p-0">
-                      {org.name}
+                      {team.name}
                     </CardBody>
                     <CardFooter className="text-small justify-between flex-row gap-2 flex-wrap">
                       <Button
-                        name={org.code}
-                        onClick={() => handleJoinTeam(org.code)}
+                        name={team.id}
+                        onClick={() => handleJoinTeam(team.id)}
                       >
                         Join
                       </Button>
                       <Button
-                        name={org.code}
-                        onClick={() => handleOpenTeamPage(org.code)}
+                        name={team.id}
+                        onClick={() => handleOpenTeamPage(team.id)}
                       >
                         View Team
                       </Button>

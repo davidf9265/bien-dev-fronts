@@ -1,3 +1,5 @@
+'use client';
+
 import {
   LoginLink,
   RegisterLink,
@@ -19,11 +21,45 @@ import {
   NavbarItem,
   User,
 } from '@nextui-org/react';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 
 const AppHeader = () => {
-  const { user, getToken } = useKindeBrowserClient();
+  const {
+    user,
+    organization: _userOrg,
+    getToken,
+    getOrganization,
+  } = useKindeBrowserClient();
+
+  const [userOrg, setUserOrg] = useState(null);
+
+  async function getUserOrganizations() {
+    if (user && _userOrg) {
+      const token = await getToken();
+      const org = await fetch(
+        `/management/organizations/getOneById?code=${_userOrg.orgCode}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      ).then((res) => {
+        return res.json();
+      });
+      console.log('org', org);
+
+      if (org) {
+        setUserOrg(org);
+      }
+    }
+  }
+
+  useEffect(() => {
+    getUserOrganizations();
+  }, [_userOrg]);
 
   return (
     <Navbar maxWidth="full">
@@ -45,10 +81,17 @@ const AppHeader = () => {
           </Link>
         </NavbarItem>
         <NavbarItem>
-          <Link color="foreground" href="planning">
+          <Link color="foreground" href="/planning">
             Planning
           </Link>
         </NavbarItem>
+        {userOrg && userOrg.name ? (
+          <NavbarItem>
+            <Link color="foreground" href={`/${userOrg.code}/dashboard`}>
+              {userOrg.name}
+            </Link>
+          </NavbarItem>
+        ) : null}
       </NavbarContent>
 
       <NavbarContent as="div" justify="end">
